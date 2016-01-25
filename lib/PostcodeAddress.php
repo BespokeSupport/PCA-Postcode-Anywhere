@@ -69,7 +69,7 @@ class PostcodeAddress
                 ];
                 return $return;
             }
-die('aaa');
+
             $result = self::lookup($postcodeClass->getPostcode(), $account, $licence);
 
             if (!$result) {
