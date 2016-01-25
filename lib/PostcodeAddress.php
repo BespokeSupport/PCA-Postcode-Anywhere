@@ -14,6 +14,7 @@ namespace BespokeSupport\PostcodeAnywhere;
 use BespokeSupport\DatabaseWrapper\DatabaseWrapperInterface;
 use BespokeSupport\Location\Postcode;
 use Buzz\Browser;
+use Buzz\Client\Curl;
 use Buzz\Client\FileGetContents;
 use Buzz\Exception\RequestException;
 
@@ -161,8 +162,12 @@ TAG;
         $url .= "&Key=" . urlencode($licence);
         $url .= "&Postcode=" . urlencode($postcodeClass->getPostcode());
 
-        $client = new FileGetContents();
-        $client->setTimeout(5);
+        if (in_array('curl', get_loaded_extensions())) {
+            $client = new Curl();
+        } else {
+            $client = new FileGetContents();
+        }
+
         $client->setVerifyPeer(false);
         $client->setVerifyHost(false);
 
