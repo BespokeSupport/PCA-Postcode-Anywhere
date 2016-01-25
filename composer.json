@@ -1,0 +1,33 @@
+{
+  "name": "bespoke-support/pca-postcode-anywhere",
+  "description": "PCA Postcode Anywhere lookup + cache",
+  "license": "MIT",
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Richard Seymour",
+      "email": "web@rickseymour.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "BespokeSupport\\PostcodeAnywhere\\": "lib"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "BespokeSupport\\PostcodeAnywhere\\Tests\\": "Tests"
+    }
+  },
+  "require": {
+    "php": ">5.3",
+    "bespoke-support/location": "0.1",
+    "kriswallsmith/buzz": "v0.15"
+  },
+  "require-dev": {
+    "bespoke-support/database-wrapper": "@dev"
+  },
+  "suggest": {
+    "bespoke-support/database-wrapper": "@dev"
+  }
+}
