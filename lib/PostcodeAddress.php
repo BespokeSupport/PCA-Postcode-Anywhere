@@ -55,7 +55,7 @@ class PostcodeAddress
         }
 
         if ($database && $database instanceof DatabaseWrapperInterface) {
-            $result = $database->find('paAddress', $postcode, 'postcode');
+            $result = $database->find('paAddress', $postcodeClass->getPostcode(), 'postcode');
             if (!$overrideCache &&
                 $result &&
                 static::$age &&
@@ -69,7 +69,7 @@ class PostcodeAddress
                 ];
                 return $return;
             }
-
+die('aaa');
             $result = self::lookup($postcodeClass->getPostcode(), $account, $licence);
 
             if (!$result) {
