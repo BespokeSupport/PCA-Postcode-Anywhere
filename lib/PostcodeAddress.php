@@ -56,10 +56,14 @@ class PostcodeAddress
 
         if ($database && $database instanceof DatabaseWrapperInterface) {
             $result = $database->find('paAddress', $postcodeClass->getPostcode(), 'postcode');
+
             if (!$overrideCache &&
                 $result &&
-                static::$age &&
-                (new \DateTime($result->created)) > (new \DateTime(static::$age))
+                (
+                    !static::$age ||
+                    !($cacheExpire = (new \DateTime(static::$age))) ||
+                    (new \DateTime($result->created)) > $cacheExpire
+                )
             ) {
                 $return = [
                     'postcode' => $postcodeClass->getPostcode(),
