@@ -142,7 +142,6 @@ TAG;
     /**
      * @param $postcode
      * @param null                          $licence
-     * @param null                          $account
      * @param DatabaseWrapperInterface|null $database
      * @param bool                          $overrideCache
      *
@@ -150,7 +149,6 @@ TAG;
      */
     public static function get(
         $postcode,
-        $account = null,
         $licence = null,
         $database = null,
         $overrideCache = false
@@ -170,7 +168,7 @@ TAG;
             return $result;
         }
 
-        $result = self::lookup($postcodeClass->getPostcode(), $account, $licence);
+        $result = self::lookup($postcodeClass->getPostcode(), $licence);
 
         if (!$result || !isset($result['error']) || $result['error']) {
             return [
@@ -233,25 +231,22 @@ TAG;
     /**
      * @param $postcode
      * @param null                          $licence
-     * @param null                          $account
      * @param DatabaseWrapperInterface|null $database
      *
      * @return string
      */
     public static function json(
         $postcode,
-        $account = null,
         $licence = null,
         $database = null
     ) {
-        $result = self::get($postcode, $account, $licence, $database);
+        $result = self::get($postcode, $licence, $database);
 
         return json_encode($result);
     }
 
     /**
      * @param $postcode
-     * @param null $account
      * @param null $apiLicenceKey
      *
      * @return array|null
@@ -260,7 +255,6 @@ TAG;
      */
     public static function lookup(
         $postcode,
-        $account,
         $apiLicenceKey
     ) {
         $postcodeClass = new Postcode($postcode);
