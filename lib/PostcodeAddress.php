@@ -214,14 +214,14 @@ TAG;
      */
     public static function getUrl($endpoint, $version, array $params)
     {
-        if (!array_key_exists('account', $params) || !array_key_exists('apiLicenceKey', $params)) {
+        if (!array_key_exists('Key', $params)) {
             throw new \Exception('Address API lookup licence not available');
         }
 
         $paramsEncoded = http_build_query($params);
 
         $url = sprintf(
-            'https://services.postcodeanywhere.co.uk/PostcodeAnywhere/Interactive/%1/v%2/json.ws?%3',
+            'https://services.postcodeanywhere.co.uk/PostcodeAnywhere/Interactive/%s/%s/json.ws?%s',
             $endpoint,
             $version,
             $paramsEncoded
@@ -278,8 +278,7 @@ TAG;
             'RetrieveByParts',
             '1.00',
             [
-                'account' => $account,
-                'apiLicenceKey' => $apiLicenceKey,
+                'Key' => $apiLicenceKey,
                 'Postcode' => $postcodeClass->getPostcode(),
             ]
         );
