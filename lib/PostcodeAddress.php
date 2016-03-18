@@ -65,12 +65,12 @@ class PostcodeAddress
         if (!static::$age ||
             (new \DateTime($result->created)) > static::$age
         ) {
-            return [
+            return array(
                 'postcode' => $postcodeClass->getPostcode(),
                 'error' => false,
                 'source' => 'cache',
                 'data' => json_decode($result->content, true),
-            ];
+            );
         }
 
         return false;
@@ -103,10 +103,10 @@ TAG;
 
         $database->sqlInsertUpdate(
             $insertUpdateSql,
-            [
+            array(
                 'postcode' => $postcodeClass->getPostcode(),
                 'content' => json_encode($result['data'], true),
-            ]
+            )
         );
 
         return true;
@@ -119,10 +119,10 @@ TAG;
      */
     public static function convertApiDataToResponse($addresses)
     {
-        $data = [];
+        $data = array();
         foreach ($addresses as $address) {
             $isResidential = (!empty($address['Type']) && $address['Type'] == 'Residential') ? true : false;
-            $data[] = [
+            $data[] = array(
                 'residential' => $isResidential,
                 'name' => (!$isResidential) ? $address['Company'] : null,
                 'line1' => $address['Line1'],
@@ -133,7 +133,7 @@ TAG;
                 'country' => $address['CountryName'],
                 'postcode' => $address['Postcode'],
                 'id' => $address['Udprn'],
-            ];
+            );
         }
 
         return $data;
@@ -156,12 +156,12 @@ TAG;
         $postcodeClass = new Postcode($postcode);
 
         if (!$postcodeClass->getPostcode()) {
-            return [
+            return array(
                 'postcode' => $postcode,
                 'error' => 'Invalid Postcode',
                 'source' => 'cache',
                 'data' => null,
-            ];
+            );
         }
 
         if (($result = self::cacheFind($database, $postcodeClass, $overrideCache))) {
@@ -171,12 +171,12 @@ TAG;
         $result = self::lookup($postcodeClass->getPostcode(), $licence);
 
         if (!$result || !isset($result['error']) || $result['error']) {
-            return [
+            return array(
                 'postcode' => $postcode,
                 'error' => $result['error'],
                 'source' => 'api',
                 'data' => null,
-            ];
+            );
         }
 
         self::cacheSave($database, $postcodeClass, $result);
@@ -260,21 +260,21 @@ TAG;
         $postcodeClass = new Postcode($postcode);
 
         if (!$postcodeClass->getPostcode()) {
-            return [
+            return array(
                 'postcode' => $postcode,
                 'error' => 'Invalid Postcode',
                 'source' => 'cache',
                 'data' => null,
-            ];
+            );
         }
 
         $url = self::getUrl(
             'RetrieveByParts',
             '1.00',
-            [
+            array(
                 'Key' => $apiLicenceKey,
                 'Postcode' => $postcodeClass->getPostcode(),
-            ]
+            )
         );
 
         $browser = new Browser(self::getClient());
@@ -282,42 +282,42 @@ TAG;
         try {
             $response = $browser->get($url);
         } catch (RequestException $e) {
-            return [
+            return array(
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
                 'source' => 'api',
                 'data' => null,
-            ];
+            );
         }
 
         if (!$response || !($content = $response->getContent())) {
-            return [
+            return array(
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
                 'source' => 'api',
                 'data' => null,
-            ];
+            );
         }
 
         $json = json_decode($content, true);
 
         if (!$json || (count($json) == 1 && isset($json[0]['Error']))) {
-            $return = [
+            $return = array(
                 'postcode' => $postcodeClass->getPostcode(),
                 'error' => 'Problem fetching Postcode addresses',
                 'source' => 'api',
-                'data' => [],
-            ];
+                'data' => array(),
+            );
 
             return $return;
         }
 
-        $return = [
+        $return = array(
             'postcode' => $postcodeClass->getPostcode(),
             'error' => false,
             'source' => 'api',
-            'data' => [],
-        ];
+            'data' => array(),
+        );
 
         $return['data'] = self::convertApiDataToResponse($json);
 
