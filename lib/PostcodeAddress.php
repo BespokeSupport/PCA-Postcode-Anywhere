@@ -285,6 +285,7 @@ TAG;
             return array(
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
+                'errorDetail' => $e->getMessage(),
                 'source' => 'api',
                 'data' => null,
             );
@@ -294,6 +295,7 @@ TAG;
             return array(
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
+                'errorDetail' => 'No content',
                 'source' => 'api',
                 'data' => null,
             );
