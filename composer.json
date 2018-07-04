@@ -21,7 +21,7 @@
   },
   "require": {
     "php": ">5.3",
-    "bespoke-support/location": "~0.1",
+    "bespoke-support/location": "@dev",
     "bespoke-support/database-wrapper": "@dev",
     "kriswallsmith/buzz": "v0.15"
   },
