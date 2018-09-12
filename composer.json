@@ -20,11 +20,10 @@
     }
   },
   "require": {
-    "php": ">5.3",
-    "bespoke-support/location": "@dev",
-    "bespoke-support/database-wrapper": "@dev",
-    "kriswallsmith/buzz": "0.*"
-  },
-  "require-dev": {
+    "php": "^5.6|^7",
+    "ext-json": "*",
+    "bespoke-support/location": "@stable",
+    "bespoke-support/database-wrapper": "@stable",
+    "guzzlehttp/guzzle": "^5|^6"
   }
 }

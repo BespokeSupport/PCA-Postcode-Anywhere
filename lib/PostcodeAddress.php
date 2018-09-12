@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PCA / Postcode Anywhere lookup.
  *
@@ -13,10 +14,11 @@ namespace BespokeSupport\PostcodeAnywhere;
 
 use BespokeSupport\DatabaseWrapper\DatabaseWrapperInterface;
 use BespokeSupport\Location\Postcode;
-use Buzz\Browser;
-use Buzz\Client\Curl;
-use Buzz\Client\FileGetContents;
-use Buzz\Exception\RequestException;
+use DateTime;
+use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use RuntimeException;
 
 /**
  * Class PostcodeAddress.
@@ -29,11 +31,17 @@ class PostcodeAddress
     protected static $age = null;
 
     /**
+     * @var int Timeout for Guzzle HTTP request
+     */
+    public static $timeOutDefault = 5;
+
+    /**
      * PostcodeAddress constructor.
+     * @throws Exception
      */
     public function __construct()
     {
-        throw new \Exception('PostcodeAddress cannot be created');
+        throw new RuntimeException('PostcodeAddress cannot be created');
     }
 
     /**
@@ -48,6 +56,10 @@ class PostcodeAddress
         Postcode $postcodeClass = null,
         $overrideCache = false
     ) {
+        if (!$postcodeClass) {
+            return false;
+        }
+
         if (!$database || !($database instanceof DatabaseWrapperInterface)) {
             return false;
         }
@@ -63,14 +75,14 @@ class PostcodeAddress
         }
 
         if (!static::$age ||
-            (new \DateTime($result->created)) > static::$age
+            new DateTime($result->created) > static::$age
         ) {
-            return array(
+            return [
                 'postcode' => $postcodeClass->getPostcode(),
                 'error' => false,
                 'source' => 'cache',
                 'data' => json_decode($result->content, true),
-            );
+            ];
         }
 
         return false;
@@ -103,26 +115,27 @@ TAG;
 
         $database->sqlInsertUpdate(
             $insertUpdateSql,
-            array(
+            [
                 'postcode' => $postcodeClass->getPostcode(),
                 'content' => json_encode($result['data'], true),
-            )
+            ]
         );
 
         return true;
     }
 
     /**
-     * @param $addresses
+     * @param array $addresses
      *
      * @return array
      */
     public static function convertApiDataToResponse($addresses)
     {
-        $data = array();
+        $data = [];
         foreach ($addresses as $address) {
-            $isResidential = (!empty($address['Type']) && $address['Type'] == 'Residential') ? true : false;
-            $data[] = array(
+            $isResidential = (!empty($address['Type']) && $address['Type'] === 'Residential');
+
+            $data[] = [
                 'residential' => $isResidential,
                 'name' => (!$isResidential) ? $address['Company'] : null,
                 'line1' => $address['Line1'],
@@ -133,7 +146,7 @@ TAG;
                 'country' => $address['CountryName'],
                 'postcode' => $address['Postcode'],
                 'id' => $address['Udprn'],
-            );
+            ];
         }
 
         return $data;
@@ -156,27 +169,33 @@ TAG;
         $postcodeClass = new Postcode($postcode);
 
         if (!$postcodeClass->getPostcode()) {
-            return array(
+            return [
                 'postcode' => $postcode,
                 'error' => 'Invalid Postcode',
                 'source' => 'cache',
                 'data' => null,
-            );
+            ];
         }
 
-        if (($result = self::cacheFind($database, $postcodeClass, $overrideCache))) {
+        $result = self::cacheFind($database, $postcodeClass, $overrideCache);
+
+        if ($result) {
             return $result;
         }
 
-        $result = self::lookup($postcodeClass->getPostcode(), $licence);
+        try {
+            $result = self::lookup($postcodeClass->getPostcode(), $licence);
+        } catch (Exception $e) {
+            $result = null;
+        }
 
         if (!$result || !isset($result['error']) || $result['error']) {
-            return array(
+            return [
                 'postcode' => $postcode,
                 'error' => $result['error'],
                 'source' => 'api',
                 'data' => null,
-            );
+            ];
         }
 
         self::cacheSave($database, $postcodeClass, $result);
@@ -185,20 +204,13 @@ TAG;
     }
 
     /**
-     * @return Curl|FileGetContents
+     * @return Client
      */
     public static function getClient()
     {
-        if (in_array('curl', get_loaded_extensions())) {
-            $client = new Curl();
-        } else {
-            $client = new FileGetContents();
-        }
-
-        $client->setVerifyPeer(false);
-        $client->setVerifyHost(false);
-
-        return $client;
+        return new Client([
+            'timeout' => self::$timeOutDefault,
+        ]);
     }
 
     /**
@@ -208,12 +220,12 @@ TAG;
      *
      * @return string
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public static function getUrl($endpoint, $version, array $params)
     {
         if (!array_key_exists('Key', $params)) {
-            throw new \Exception('Address API lookup licence not available');
+            throw new \RuntimeException('Address API lookup licence not available');
         }
 
         $paramsEncoded = http_build_query($params);
@@ -251,7 +263,7 @@ TAG;
      *
      * @return array|null
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public static function lookup(
         $postcode,
@@ -260,66 +272,66 @@ TAG;
         $postcodeClass = new Postcode($postcode);
 
         if (!$postcodeClass->getPostcode()) {
-            return array(
+            return [
                 'postcode' => $postcode,
                 'error' => 'Invalid Postcode',
                 'source' => 'cache',
                 'data' => null,
-            );
+            ];
         }
 
         $url = self::getUrl(
             'RetrieveByParts',
             '1.00',
-            array(
+            [
                 'Key' => $apiLicenceKey,
                 'Postcode' => $postcodeClass->getPostcode(),
-            )
+            ]
         );
 
-        $browser = new Browser(self::getClient());
+        $client = self::getClient();
 
         try {
-            $response = $browser->get($url);
+            $response = $client->get($url);
         } catch (RequestException $e) {
-            return array(
+            return [
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
                 'errorDetail' => $e->getMessage(),
                 'source' => 'api',
                 'data' => null,
-            );
+            ];
         }
 
-        if (!$response || !($content = $response->getContent())) {
-            return array(
+        if (!($content = $response->getBody()->getContents())) {
+            return [
                 'postcode' => $postcode,
                 'error' => 'Address lookup fail',
                 'errorDetail' => 'No content',
                 'source' => 'api',
                 'data' => null,
-            );
+            ];
         }
 
         $json = json_decode($content, true);
 
-        if (!$json || (count($json) == 1 && isset($json[0]['Error']))) {
-            $return = array(
+        if (!$json || (\count($json) === 1 && isset($json[0]['Error']))) {
+            $return = [
                 'postcode' => $postcodeClass->getPostcode(),
                 'error' => 'Problem fetching Postcode addresses',
                 'source' => 'api',
-                'data' => array(),
-            );
+                'data' => [],
+            ];
 
             return $return;
         }
 
-        $return = array(
+        $return = [
             'postcode' => $postcodeClass->getPostcode(),
             'error' => false,
             'source' => 'api',
-            'data' => array(),
-        );
+            'data' => [],
+        ];
 
         $return['data'] = self::convertApiDataToResponse($json);
 
@@ -329,19 +341,19 @@ TAG;
     /**
      * @param $age
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public static function setAge($age)
     {
         $exceptionMessage = 'Age must be a string in a \DateTime compatible format';
         if (!is_string($age)) {
-            throw new \Exception($exceptionMessage);
+            throw new RuntimeException($exceptionMessage);
         }
 
         try {
-            static::$age = new \DateTime($age);
-        } catch (\Exception $exception) {
-            throw new \Exception($exceptionMessage);
+            static::$age = new DateTime($age);
+        } catch (Exception $exception) {
+            throw new RuntimeException($exceptionMessage);
         }
     }
 }
