@@ -36,6 +36,11 @@ class PostcodeAddress
     public static $timeOutDefault = 5;
 
     /**
+     * @var bool Verify certificates
+     */
+    public static $verifyDefault = true;
+
+    /**
      * PostcodeAddress constructor.
      * @throws Exception
      */
@@ -210,6 +215,7 @@ TAG;
     {
         return new Client([
             'timeout' => self::$timeOutDefault,
+            'verify' => self::$verifyDefault,
         ]);
     }
 
